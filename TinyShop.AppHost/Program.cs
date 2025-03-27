@@ -6,8 +6,8 @@ var redis = builder.AddRedis("redis")
     .WithDataVolume("myredisimage")
     .WithPersistence(TimeSpan.FromMinutes(5), 100);
 
-var postgres = builder.AddPostgres("postgres")
-    .WithPgAdmin();
+//var postgres = builder.AddPostgres("postgres")
+//    .WithPgAdmin();
 
 var products = builder.AddProject<Projects.Products>("products")
     .WithReference(redis)
