@@ -59,6 +59,7 @@ public class InMemoryCartService : ICartService
         cart.Items.Clear();
     }
 
+    // DEMO: NES
     public decimal GetTotalPrice(string userId)
     {
         var cart = GetCart(userId);
