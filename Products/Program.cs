@@ -12,9 +12,11 @@ builder.AddRedisOutputCache("cache");
 // Add services to the container.
 builder.Services.AddSingleton<RandomFailureMiddleware>();
 
-
 builder.Services.AddDbContext<ProductDataContext>(options =>
 	options.UseInMemoryDatabase("inmemproducts"));
+
+// Register CartService
+builder.Services.AddSingleton<ICartService, InMemoryCartService>();
 
 // Add services to the container.
 var app = builder.Build();
@@ -28,6 +30,7 @@ app.UseHttpsRedirection();
 app.UseMiddleware<RandomFailureMiddleware>();
 
 app.MapProductEndpoints();
+app.MapCartEndpoints();
 
 app.UseStaticFiles();
 
