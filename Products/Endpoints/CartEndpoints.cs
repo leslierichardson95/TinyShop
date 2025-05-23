@@ -37,11 +37,11 @@ public static class CartEndpoints
         })
         .WithName("RemoveFromCart");
 
-        group.MapPost("/cart/clear", (ICartService cartService) =>
-        {
-            cartService.ClearCart(demoUserId);
-            return Results.Ok();
-        })
-        .WithName("ClearCart");
+        //group.MapPost("/cart/clear", (ICartService cartService) =>
+        //{
+        //    cartService.ClearCart(demoUserId);
+        //    return Results.Ok();
+        //})
+        //.WithName("ClearCart");
     }
 }
