@@ -19,8 +19,7 @@ public interface ICartService
     Cart GetCart(string userId);
     void AddToCart(string userId, Product product, int quantity = 1);
     void RemoveFromCart(string userId, int productId);
-    void ClearCart(string userId);
-    decimal GetTotalPrice(string userId);
+    decimal GetTotalPrice(string userId); 
 }
 
 public class InMemoryCartService : ICartService
@@ -30,7 +29,7 @@ public class InMemoryCartService : ICartService
     //DEMO: Implement with Copilot - GetCart
     public Cart GetCart(string userId)
     {
-        return _carts.GetOrAdd(userId, _ => new Cart());
+        throw new NotImplementedException();
     }
 
     public void AddToCart(string userId, Product product, int quantity = 1)
@@ -47,16 +46,11 @@ public class InMemoryCartService : ICartService
         }
     }
 
+    // DEMO: Adaptive Paste - Implement ClearCart
     public void RemoveFromCart(string userId, int productId)
     {
         var cart = GetCart(userId);
         cart.Items.RemoveAll(i => i.Product.Id == productId);
-    }
-
-    public void ClearCart(string userId)
-    {
-        var cart = GetCart(userId);
-        cart.Items.Clear();
     }
 
     // DEMO: NES
