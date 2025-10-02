@@ -29,7 +29,13 @@ public class InMemoryCartService : ICartService
     //DEMO: Implement with Copilot - GetCart
     public Cart GetCart(string userId)
     {
-        throw new NotImplementedException();
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            throw new ArgumentException("User ID cannot be null or empty.", nameof(userId));
+        }
+
+        // Retrieve the cart for the specified user ID, or create a new one if it doesn't exist.
+        return _carts.GetOrAdd(userId, _ => new Cart());
     }
 
     public void AddToCart(string userId, Product product, int quantity = 1)
