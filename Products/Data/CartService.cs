@@ -19,23 +19,31 @@ public interface ICartService
     Cart GetCart(string userId);
     void AddToCart(string userId, Product product, int quantity = 1);
     void RemoveFromCart(string userId, int productId);
-    decimal GetTotalPrice(string userId); 
+    decimal GetTotalPrice(string userId);
 }
 
 public class InMemoryCartService : ICartService
 {
     private readonly ConcurrentDictionary<string, Cart> _carts = new();
 
-    //DEMO: Implement with Copilot - GetCart
+    //TODO: Implement GetCart before the conference
     public Cart GetCart(string userId)
     {
         throw new NotImplementedException();
     }
 
-    // TODO: Implement AddToCart before the conference
     public void AddToCart(string userId, Product product, int quantity = 1)
     {
-        throw new NotImplementedException();
+        var cart = GetCart(userId);
+        var item = cart.Items.FirstOrDefault(i => i.Product.Id == product.Id);
+        if (item == null)
+        {
+            cart.Items.Add(new CartItem { Product = product, Quantity = quantity });
+        }
+        else
+        {
+            item.Quantity += quantity;
+        }
     }
 
     // DEMO: Adaptive Paste - Implement ClearCart
