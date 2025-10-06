@@ -32,18 +32,10 @@ public class InMemoryCartService : ICartService
         throw new NotImplementedException();
     }
 
+    // TODO: Implement AddToCart before the conference
     public void AddToCart(string userId, Product product, int quantity = 1)
     {
-        var cart = GetCart(userId);
-        var item = cart.Items.FirstOrDefault(i => i.Product.Id == product.Id);
-        if (item == null)
-        {
-            cart.Items.Add(new CartItem { Product = product, Quantity = quantity });
-        }
-        else
-        {
-            item.Quantity += quantity;
-        }
+        throw new NotImplementedException();
     }
 
     // DEMO: Adaptive Paste - Implement ClearCart
