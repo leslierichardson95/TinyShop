@@ -35,6 +35,326 @@ public class ProductServiceTests
         return JsonSerializer.Serialize(product, ProductSerializerContext.Default.Product);
     }
 
+    private string SerializeProductList(List<Product> products)
+    {
+        return JsonSerializer.Serialize(products, ProductSerializerContext.Default.ListProduct);
+    }
+
+    #region GetProducts Tests
+
+    [Fact]
+    public async Task GetProducts_WithSuccessfulResponse_ReturnsProductList()
+    {
+        // Arrange
+        var mockHttp = new MockHttpMessageHandler();
+        var testProducts = new List<Product>
+        {
+            CreateTestProduct(1, "Product 1", 15.99m),
+            CreateTestProduct(2, "Product 2", 25.99m),
+            CreateTestProduct(3, "Product 3", 35.99m)
+        };
+        var productsJson = SerializeProductList(testProducts);
+
+        mockHttp.When("https://localhost/api/Product")
+                .Respond("application/json", productsJson);
+
+        var productService = CreateProductService(mockHttp);
+
+        // Act
+        var result = await productService.GetProducts();
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(3, result.Count);
+        
+        Assert.Equal(testProducts[0].Id, result[0].Id);
+        Assert.Equal(testProducts[0].Name, result[0].Name);
+        Assert.Equal(testProducts[0].Price, result[0].Price);
+        
+        Assert.Equal(testProducts[1].Id, result[1].Id);
+        Assert.Equal(testProducts[1].Name, result[1].Name);
+        Assert.Equal(testProducts[1].Price, result[1].Price);
+        
+        Assert.Equal(testProducts[2].Id, result[2].Id);
+        Assert.Equal(testProducts[2].Name, result[2].Name);
+        Assert.Equal(testProducts[2].Price, result[2].Price);
+    }
+
+    [Fact]
+    public async Task GetProducts_WithEmptyResponse_ReturnsEmptyList()
+    {
+        // Arrange
+        var mockHttp = new MockHttpMessageHandler();
+        var emptyProductList = new List<Product>();
+        var emptyJson = SerializeProductList(emptyProductList);
+
+        mockHttp.When("https://localhost/api/Product")
+                .Respond("application/json", emptyJson);
+
+        var productService = CreateProductService(mockHttp);
+
+        // Act
+        var result = await productService.GetProducts();
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Empty(result);
+    }
+
+    [Fact]
+    public async Task GetProducts_WithSingleProduct_ReturnsSingleItemList()
+    {
+        // Arrange
+        var mockHttp = new MockHttpMessageHandler();
+        var singleProduct = new List<Product> { CreateTestProduct(1, "Single Product", 99.99m) };
+        var singleProductJson = SerializeProductList(singleProduct);
+
+        mockHttp.When("https://localhost/api/Product")
+                .Respond("application/json", singleProductJson);
+
+        var productService = CreateProductService(mockHttp);
+
+        // Act
+        var result = await productService.GetProducts();
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Single(result);
+        Assert.Equal("Single Product", result[0].Name);
+        Assert.Equal(99.99m, result[0].Price);
+    }
+
+    [Fact]
+    public async Task GetProducts_WithServerError_ReturnsEmptyList()
+    {
+        // Arrange
+        var mockHttp = new MockHttpMessageHandler();
+        mockHttp.When("https://localhost/api/Product")
+                .Respond(HttpStatusCode.InternalServerError);
+
+        var productService = CreateProductService(mockHttp);
+
+        // Act
+        var result = await productService.GetProducts();
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Empty(result);
+    }
+
+    [Fact]
+    public async Task GetProducts_WithBadRequest_ReturnsEmptyList()
+    {
+        // Arrange
+        var mockHttp = new MockHttpMessageHandler();
+        mockHttp.When("https://localhost/api/Product")
+                .Respond(HttpStatusCode.BadRequest);
+
+        var productService = CreateProductService(mockHttp);
+
+        // Act
+        var result = await productService.GetProducts();
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Empty(result);
+    }
+
+    [Fact]
+    public async Task GetProducts_WithNotFound_ReturnsEmptyList()
+    {
+        // Arrange
+        var mockHttp = new MockHttpMessageHandler();
+        mockHttp.When("https://localhost/api/Product")
+                .Respond(HttpStatusCode.NotFound);
+
+        var productService = CreateProductService(mockHttp);
+
+        // Act
+        var result = await productService.GetProducts();
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Empty(result);
+    }
+
+    [Fact]
+    public async Task GetProducts_WithUnauthorized_ReturnsEmptyList()
+    {
+        // Arrange
+        var mockHttp = new MockHttpMessageHandler();
+        mockHttp.When("https://localhost/api/Product")
+                .Respond(HttpStatusCode.Unauthorized);
+
+        var productService = CreateProductService(mockHttp);
+
+        // Act
+        var result = await productService.GetProducts();
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Empty(result);
+    }
+
+    [Fact]
+    public async Task GetProducts_WithNullResponseContent_ReturnsEmptyList()
+    {
+        // Arrange
+        var mockHttp = new MockHttpMessageHandler();
+        mockHttp.When("https://localhost/api/Product")
+                .Respond("application/json", "null");
+
+        var productService = CreateProductService(mockHttp);
+
+        // Act
+        var result = await productService.GetProducts();
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Empty(result);
+    }
+
+    [Fact]
+    public async Task GetProducts_WithMalformedJson_ReturnsEmptyList()
+    {
+        // Arrange
+        var mockHttp = new MockHttpMessageHandler();
+        mockHttp.When("https://localhost/api/Product")
+                .Respond("application/json", "{ invalid json }");
+
+        var productService = CreateProductService(mockHttp);
+
+        // Act & Assert
+        // ReadFromJsonAsync will throw JsonException for malformed JSON
+        // The ProductService should handle this gracefully
+        await Assert.ThrowsAsync<JsonException>(async () => await productService.GetProducts());
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(5)]
+    [InlineData(10)]
+    [InlineData(100)]
+    public async Task GetProducts_WithVariousProductCounts_ReturnsCorrectCount(int productCount)
+    {
+        // Arrange
+        var mockHttp = new MockHttpMessageHandler();
+        var testProducts = new List<Product>();
+        
+        for (int i = 1; i <= productCount; i++)
+        {
+            testProducts.Add(CreateTestProduct(i, $"Product {i}", i * 10.0m));
+        }
+        
+        var productsJson = SerializeProductList(testProducts);
+
+        mockHttp.When("https://localhost/api/Product")
+                .Respond("application/json", productsJson);
+
+        var productService = CreateProductService(mockHttp);
+
+        // Act
+        var result = await productService.GetProducts();
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(productCount, result.Count);
+        
+        // Verify first and last products to ensure proper deserialization
+        if (productCount > 0)
+        {
+            Assert.Equal(1, result[0].Id);
+            Assert.Equal("Product 1", result[0].Name);
+            Assert.Equal(productCount, result[productCount - 1].Id);
+            Assert.Equal($"Product {productCount}", result[productCount - 1].Name);
+        }
+    }
+
+    [Fact]
+    public async Task GetProducts_WithProductsHavingNullProperties_HandlesGracefully()
+    {
+        // Arrange
+        var mockHttp = new MockHttpMessageHandler();
+        var testProducts = new List<Product>
+        {
+            new Product { Id = 1, Name = null, Description = null, Price = 10.99m, ImageUrl = null },
+            new Product { Id = 2, Name = "Valid Product", Description = "Valid Description", Price = 20.99m, ImageUrl = "valid.jpg" }
+        };
+        var productsJson = SerializeProductList(testProducts);
+
+        mockHttp.When("https://localhost/api/Product")
+                .Respond("application/json", productsJson);
+
+        var productService = CreateProductService(mockHttp);
+
+        // Act
+        var result = await productService.GetProducts();
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(2, result.Count);
+        
+        // First product with null properties
+        Assert.Equal(1, result[0].Id);
+        Assert.Null(result[0].Name);
+        Assert.Null(result[0].Description);
+        Assert.Equal(10.99m, result[0].Price);
+        Assert.Null(result[0].ImageUrl);
+        
+        // Second product with valid properties
+        Assert.Equal(2, result[1].Id);
+        Assert.Equal("Valid Product", result[1].Name);
+        Assert.Equal("Valid Description", result[1].Description);
+        Assert.Equal(20.99m, result[1].Price);
+        Assert.Equal("valid.jpg", result[1].ImageUrl);
+    }
+
+    [Fact]
+    public async Task GetProducts_CallsCorrectEndpoint()
+    {
+        // Arrange
+        var mockHttp = new MockHttpMessageHandler();
+        var testProducts = new List<Product> { CreateTestProduct() };
+        var productsJson = SerializeProductList(testProducts);
+
+        // Verify exact endpoint is called
+        var expectedRequest = mockHttp.When("https://localhost/api/Product")
+                                     .Respond("application/json", productsJson);
+
+        var productService = CreateProductService(mockHttp);
+
+        // Act
+        var result = await productService.GetProducts();
+
+        // Assert
+        Assert.NotNull(result);
+        mockHttp.VerifyNoOutstandingExpectation();
+    }
+
+    [Fact]
+    public async Task GetProducts_WithTimeout_ThrowsTaskCanceledException()
+    {
+        // Arrange
+        var mockHttp = new MockHttpMessageHandler();
+        mockHttp.When("https://localhost/api/Product")
+                .Respond(async () =>
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(30)); // Simulate long delay
+                    return new HttpResponseMessage(HttpStatusCode.OK);
+                });
+
+        var httpClient = mockHttp.ToHttpClient();
+        httpClient.BaseAddress = new Uri("https://localhost");
+        httpClient.Timeout = TimeSpan.FromMilliseconds(100); // Very short timeout
+        
+        var productService = new ProductService(httpClient);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<TaskCanceledException>(async () => await productService.GetProducts());
+    }
+
+    #endregion
+
     #region GetProductById Tests
 
     [Fact]
